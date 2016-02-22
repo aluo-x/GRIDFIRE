@@ -1,5 +1,6 @@
 import collections as coll
 import cPickle as pickle
+import gc
 from MPfuncs import edge_func, intensity_func, iso_func, li_func, otsu_func, watershed_func, yen_func, lab_func
 import multiprocessing as mp
 import numpy as np
@@ -20,7 +21,6 @@ class PreProcess:
         self.threhold_method = ""
         self.cores = mp.cpu_count()
         self.intensity = []
-        self.lab = []
         self.masks = []
         self.threshold_arr = []
         if isinstance(cores, int):
@@ -73,8 +73,13 @@ class PreProcess:
                 pool = mp.Pool(self.cores)
                 if len(self.intensity) == 0:
                     self.intensity = pool.map(intensity_func, self.im)
+                pool.close()
+                pool.join()
+                pool = mp.Pool(self.cores)
                 oldtime = time.time()
                 thresholds = pool.map(methods[method], self.intensity)
+                pool.close()
+                pool.join()
                 newtime = time.time()
                 print("Multi-core thresholding with {}'s method finished. Total time: {} sec".format(method, str(
                     newtime - oldtime)))
@@ -123,16 +128,22 @@ class PreProcess:
                 pool = mp.Pool(self.cores)
                 if len(self.intensity) == 0:
                     self.intensity = pool.map(intensity_func, self.im)
+                pool.close()
+                pool.join()
                 oldtime = time.time()
                 print("Starting edge detection...")
+                pool = mp.Pool(self.cores)
                 edge_map = pool.map(edge_func, self.intensity)
+                pool.close()
+                pool.join()
                 print("Preparing for array...")
                 for frame_ID in range(0, len(edge_map)):
                     edge_map[frame_ID] = [edge_map[frame_ID], self.intensity[frame_ID], self.threshold_arr[frame_ID]]
-                print len(self.intensity)
-                print len(edge_map)
                 print("Starting multi-core watershed mask refinement with {} cores...".format(self.cores))
+                pool = mp.Pool(self.cores)
                 masks = pool.map(watershed_func, edge_map)
+                pool.close()
+                pool.join()
                 newtime = time.time()
                 print("Multi-core mask generation finished. Total time: {} sec".format(str(newtime - oldtime)))
 
@@ -174,20 +185,23 @@ class PreProcess:
         if self.multi:
             if __name__ == 'PreProcess':
                 pool = mp.Pool(self.cores)
-                if len(self.lab) == 0:
-                    print("Starting multi-core LAB conversion with {} cores.".format(self.cores))
-                    oldtime = time.time()
-                    self.im = pool.map(lab_func, self.im)
-                    newtime = time.time()
-                    print("LAB color space conversion finished. Total time: {} sec".format(str(newtime - oldtime)))
-        elif not self.multi:
-            if len(self.lab) == 0:
-                print("Starting single-core LAB conversion.")
+                print("Starting multi-core LAB conversion with {} cores.".format(self.cores))
                 oldtime = time.time()
-                self.im = map(lab_func, self.im)
+                self.im = pool.map(lab_func, self.im)
+                pool.close()
+                pool.join()
                 newtime = time.time()
                 print("LAB color space conversion finished. Total time: {} sec".format(str(newtime - oldtime)))
+        elif not self.multi:
+            print("Starting single-core LAB conversion.")
+            oldtime = time.time()
+            self.im = map(lab_func, self.im)
+            newtime = time.time()
+            print("LAB color space conversion finished. Total time: {} sec".format(str(newtime - oldtime)))
         return self.im
 
     def return_data(self):
+        del self.intensity
+        del self.masks
+        gc.collect()
         return self.im
