@@ -1,0 +1,16 @@
+   Neuron Segmentation Algorithm
+   (GRIDFIRE) Gap Resistant Incremental Determination of Form Identified with Regular Euclidean
+   Copyright 2016 The GRIDFIRE Authors
+
+   The initial version of this code was developed by Andrew Luo
+   while working within the MIT Boyden Lab as a UROP.
+
+   Image processing algorithms from skimage were used, additionally
+   the DBSCAN clustering algorithm by Ester M, Kriegel HP, Sander J,
+   and Xu X are used.
+
+   Contact: luo_andrew@outlook.com for issues
+
+
+
+
