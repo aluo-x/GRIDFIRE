@@ -11,7 +11,7 @@ class Cluster():
         self.multiD = []
 
     def DBSCAN(self, start_frame, end_frame, size_threshold=75, max_dist=19, min_samp=10, dist_weight=3.0,
-               color_weight=18.0, metric="euclidean", algo="ball_tree"):
+               color_weight=18.0, metric="euclidean", algo="auto"):
         shape = np.array(self.im).shape
         x_size = shape[2]
         y_size = shape[1]
@@ -26,7 +26,7 @@ class Cluster():
                 self.multiD = np.concatenate((self.multiD, im_merged), 0)
         print("Finished stacking.")
         gc.collect()
-        print("Starting DBSCAN...")
+        print("Starting DBSCAN with a total of {} points.".format(str(len(self.multiD))))
         oldtime = time.time()
         db = DBSCAN(eps=max_dist, min_samples=min_samp, metric=metric, algorithm=algo).fit(self.multiD)
         newtime = time.time()
