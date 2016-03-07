@@ -1,12 +1,14 @@
-import collections as coll
 import cPickle as pickle
+import collections as coll
 import gc
-from MPfuncs import edge_func, intensity_func, iso_func, li_func, otsu_func, watershed_func, yen_func, lab_func
 import multiprocessing as mp
-import numpy as np
-from os import path
-from scipy import ndimage as ndi
 import time
+from os import path
+
+import numpy as np
+from scipy import ndimage as ndi
+
+from MPfuncs import edge_func, intensity_func, iso_func, li_func, otsu_func, watershed_func, yen_func, lab_func
 
 
 class PreProcess:
@@ -119,7 +121,9 @@ class PreProcess:
         elif threshold == "last" and len(self.threshold_arr) == 0:
             print("Threshold has not been calculated, calculating now...")
             threshold = self.find_threshold("isodata", snapshot=True)
-        elif not isinstance(threshold, list):
+        elif isinstance(threshold, list):
+            threshold = threshold
+        else:
             raise ValueError("Threshold format not valid. It must be a list.")
 
         if self.multi:
@@ -138,14 +142,14 @@ class PreProcess:
                 pool.join()
                 print("Preparing for array...")
                 for frame_ID in range(0, len(edge_map)):
-                    edge_map[frame_ID] = [edge_map[frame_ID], self.intensity[frame_ID], self.threshold_arr[frame_ID]]
+                    edge_map[frame_ID] = [edge_map[frame_ID], self.intensity[frame_ID], threshold[frame_ID]]
                 print("Starting multi-core watershed mask refinement with {} cores...".format(self.cores))
                 pool = mp.Pool(self.cores)
                 masks = pool.map(watershed_func, edge_map)
                 pool.close()
                 pool.join()
                 newtime = time.time()
-                print("Multi-core mask generation finished. Total time: {} sec".format(str(newtime - oldtime)))
+                print("Multi-core mask refinement finished. Total time: {} sec".format(str(newtime - oldtime)))
 
         elif not self.multi:
             print("Starting single-core mask generation")
@@ -156,9 +160,10 @@ class PreProcess:
             print("Preparing for array...")
             for frame_ID in range(0, len(edge_map)):
                 edge_map[frame_ID] = [edge_map[frame_ID], self.intensity[frame_ID], self.threshold_arr[frame_ID]]
+            print("Starting single-core watershed mask refinement...")
             masks = map(watershed_func, edge_map)
             newtime = time.time()
-            print("Single-core mask generation finished. Total time: {} sec".format(str(newtime - oldtime)))
+            print("Single-core mask refinement finished. Total time: {} sec".format(str(newtime - oldtime)))
 
         if snapshot:
             print("Saving snapshot of computed masks...")
