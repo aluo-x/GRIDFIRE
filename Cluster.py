@@ -1,7 +1,8 @@
 import gc
+import time
+
 import numpy as np
 from sklearn.cluster import DBSCAN
-import time
 
 
 class Cluster():
@@ -31,8 +32,6 @@ class Cluster():
         db = DBSCAN(eps=max_dist, min_samples=min_samp, metric=metric, algorithm=algo).fit(self.multiD)
         newtime = time.time()
         print("Clustering complete. Total time: {} sec".format(str(newtime - oldtime)))
-        core_samples_mask = np.zeros_like(db.labels_, dtype=bool)
-        core_samples_mask[db.core_sample_indices_] = True
         labels = db.labels_
         unique_labels = set(labels)
         colors = np.random.rand(len(unique_labels), 4)
