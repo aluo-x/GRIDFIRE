@@ -1,6 +1,9 @@
+from time import time
+
 import numpy as np
-from skimage import color, filters, morphology
 from scipy import ndimage as ndi
+from skimage import color, filters, morphology
+from sklearn.cluster import dbscan
 
 
 def intensity_func(img_slice):
@@ -50,3 +53,20 @@ def rgb2gray(img_slice):
     r, g, b = img_slice[:, :, 0], img_slice[:, :, 1], img_slice[:, :, 2]
     gray = r / 3.0 + g / 3.0 + b / 3.0
     return gray
+
+
+def dbscan_func(data_seg):
+    point_cloud = data_seg[0]
+    eps = data_seg[1]
+    min_samples = data_seg[2]
+    metric = data_seg[3]
+    algorithm = data_seg[4]
+    i_slice = data_seg[5]
+    num_points = len(point_cloud)
+    print("Starting to cluster slice {} with a total of {} points".format(i_slice, num_points))
+    oldtime = time()
+    result = dbscan(point_cloud, eps=eps, min_samples=min_samples, metric=metric, algorithm=algorithm)
+    print("Finished clustering slice {}. Time for slice: {} sec".format(i_slice, time() - oldtime))
+    core_sample_indices = result[0]
+    labels = result[1]
+    return core_sample_indices, labels, i_slice
